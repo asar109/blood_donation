@@ -1,80 +1,105 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
+import { useParams } from 'react-router-dom';
+const ResetPassword = () => {
+  const {token}  = useParams();
+  
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-function LiveLocation() {
-  const [users, setUsers] = useState([]);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const res = await axios.get("http://localhost:4000/api/v1/donors");
-      setUsers(res.data);
-      setIsLoaded(true);
-    };
-    fetchUsers();
-  }, []);
+  const handleNewPasswordChange = (event) => {
+    setNewPassword(event.target.value);
+  };
 
-  useEffect(() => {
-    if (isLoaded) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap`;
-      script.async = true;
-      document.body.appendChild(script);
+  const handleConfirmPasswordChange = (event) => {
+    setConfirmPassword(event.target.value);
+  };
 
-      window.initMap = () => {
-        const map = new window.google.maps.Map(document.getElementById("map"), {
-          center: { lat: 0, lng: 0 },
-          zoom: 2,
+  const handleResetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setMessage("Passwords do not match");
+    } else {
+      try {
+        await axios.put(`http://localhost:4000/api/v1/reset/password/${token}`, {
+          confirmPassword,
+          newPassword,
         });
-
-        const infoWindow = new window.google.maps.InfoWindow();
-
-        users.forEach((user) => {
-          const marker = new window.google.maps.Marker({
-            position: { lat: user.latitude, lng: user.longitude },
-            map: map,
-            title: user.name,
-          });
-
-          marker.addListener("click", () => {
-            const contentString = `
-              <div>
-                <p>Name: ${user.name}</p>
-                <p>Phone Number: ${user.phone}</p>
-                <p>City: ${user.city}</p>
-                <p>Blood Type: ${user.bloodGroup}</p>
-              </div>
-            `;
-
-            infoWindow.setContent(contentString);
-            infoWindow.open(map, marker);
-          });
-        });
-      };
-
-      return () => {
-        document.body.removeChild(script);
-      };
+        setMessage("Password reset successfully");
+      } catch (error) {
+        console.error(error);
+        console.log(error)
+      }
     }
-  }, [isLoaded, users]);
+  };
 
   return (
-    <div>
-      {isLoaded ? (
-        <div id="map" style={{ height: "100vh" }}></div>
-      ) : (
-        <p>Loading...</p>
-      )}
-      <p>List of Donors:</p>
-      <ul>
-        {users.map((user) => (
-          <li key={user._id}>
-            {user.name} ({user.bloodType})
-          </li>
-        ))}
-      </ul>
+    <div className="reset-password">
+      <h2>Reset Password</h2>
+      <div className="form-group">
+        <label htmlFor="new-password">New Password</label>
+        <input
+          type="password"
+          id="new-password"
+          value={newPassword}
+          onChange={handleNewPasswordChange}
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="confirm-password">Confirm Password</label>
+        <input
+          type="password"
+          id="confirm-password"
+          value={confirmPassword}
+          onChange={handleConfirmPasswordChange}
+        />
+      </div>
+      <button onClick={handleResetPassword}>Change Password</button>
+      {message && <p className="message">{message}</p>}
+      <style jsx>{`
+        .reset-password {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        h2 {
+          margin-bottom: 1rem;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+        }
+        input[type="password"] {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 1rem;
+        }
+        button {
+          background-color: #dc143c;
+          color: #fff;
+          padding: 0.5rem 1rem;
+          border: none;
+          border-radius: 4px;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+        button:hover {
+          background-color: #b3001b;
+        }
+        .message {
+          margin-top: 1rem;
+          font-weight: bold;
+          color: #dc143c;
+        }
+      `}</style>
     </div>
   );
-}
+};
 
-export default LiveLocation;
+export default ResetPassword;
